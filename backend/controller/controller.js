@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const asyncHandler = require('express-async-handler');
 const Goal = require('../model/goalModel');
-const e = require('express');
+const express = require('express');
 const { default: mongoose } = require('mongoose');
 
 //@desc    Get goals

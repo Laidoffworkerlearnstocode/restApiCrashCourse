@@ -14,6 +14,11 @@ const goalSchema = new mongoose.Schema({
         trim: true,
         maxlength: [500, 'Goal description cannot be more than 500 characters']
     },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
