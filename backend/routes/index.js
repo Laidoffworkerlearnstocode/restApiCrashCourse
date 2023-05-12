@@ -4,10 +4,11 @@ const { getGoals, createGoal, updateGoal, deleteGoal } = require('../controller/
 const { body } = require('express-validator');
 
 const validationRules = [
-    body('text').isLength({ min: 1 }).withMessage('Goal text is required'),
+    body('name').isLength({ min: 1 }).withMessage('Please enter goal name'),
+    body('description').isLength({ min: 1 }).withMessage('Please enter goal description')
 ];
 
 router.route('/').get(getGoals).post(validationRules, createGoal)
-router.route('/:id').put(updateGoal).delete(deleteGoal)
+router.route('/:id').put(validationRules, updateGoal).delete(deleteGoal)
 
 module.exports = router;

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const goalSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: [true, 'Please enter goal name'],
+        required: true,
         trim: true,
         unique: true,
         maxlength: [50, 'Goal name cannot be more than 50 characters']
@@ -20,4 +20,6 @@ const goalSchema = new mongoose.Schema({
     }
 })
 
-module.exports = mongoose.model('Goal', goalSchema);
+const Goal = mongoose.model('Goal', goalSchema, 'myGoals');
+
+module.exports = Goal;
