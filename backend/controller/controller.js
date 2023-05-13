@@ -3,12 +3,20 @@ const asyncHandler = require('express-async-handler');
 const Goal = require('../model/goalModel');
 const express = require('express');
 const { default: mongoose } = require('mongoose');
+const { CustomError } = require('../middleware/errorMiddleware')
 
 //@desc    Get goals
-//@route   GET /api/v1/goals
+//@route   GET /api/goals
 //@access  private
 const getGoals = asyncHandler(async (req, res) => {
-    const goals = await Goal.find();
+    const id = req.userId;
+    const goals = await Goal.find({ user: id });
+    if (!goals) {
+        return res.status(404).json({
+            success: false,
+            data: 'No goals found'
+        });
+    } 
     res.status(200).json({
         success: true,
         data: goals
@@ -16,9 +24,9 @@ const getGoals = asyncHandler(async (req, res) => {
 });
 
 //@desc    Create goal
-//@route   POST /api/v1/goals
+//@route   POST /api/goals
 //@access  private
-const createGoal = asyncHandler(async (req, res, next) => {
+const createGoal = asyncHandler(async (req, res) => {
     const err = validationResult(req);
     if (!err.isEmpty()) {
         res.status(400).json({
@@ -26,9 +34,15 @@ const createGoal = asyncHandler(async (req, res, next) => {
             data: err.array()[0].msg
         });
     }
-    const { name, description } = req.body;
+    const id = req.userId;
+    const { name, description} = req.body;
     const createdAt = Date.now();
-    const goal = new Goal({ name, description, createdAt });
+    const goal = new Goal({ 
+        name, 
+        description, 
+        user : id, 
+        createdAt 
+    });
     await goal.save();
     res.status(201).json({
         success: true,
@@ -36,10 +50,11 @@ const createGoal = asyncHandler(async (req, res, next) => {
 });
 
 //@desc    Update goal
-//@route   PUT /api/v1/goals/:id
+//@route   PUT /api/goals/:id
 //@access  private
 const updateGoal = asyncHandler(async (req, res, next) => {
     const err = validationResult(req);
+    const user_id = req.userId;
     if (!err.isEmpty()) {
         return res.status(400).json({
             success: false,
@@ -47,17 +62,19 @@ const updateGoal = asyncHandler(async (req, res, next) => {
         });
     }
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        res.status(404);
-        return next(new Error(`No goal with id ${req.params.id}`));
+        return next(new CustomError(`No goal with id ${req.params.id}`, 404));
     }
     const { name, description } = req.body;
-    const goal = await Goal.findById(req.params.id);
+    const goal = await Goal.findOne({$and:[
+        { user: user_id},
+        {_id : req.params.id}
+    ]});
     if (!goal) {
-        res.status(404);
-        return next(new Error(`No goal with id ${req.params.id}`));
+        return next(new CustomError(`No goal with id ${req.params.id}`, 404));
     } else {
         goal.name = name;
         goal.description = description;
+        console.log(goal);
         await goal.save();
         res.status(200).json({
             success: true,
@@ -67,17 +84,19 @@ const updateGoal = asyncHandler(async (req, res, next) => {
 });
 
 //@desc    Delete goal
-//@route   DELETE /api/v1/goals/:id
+//@route   DELETE /api/goals/:id
 //@access  private
 const deleteGoal = asyncHandler(async (req, res, next) => {
+    const user_id = req.userId;
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-        res.status(404);
-        return next(new Error(`No goal with id ${req.params.id}`));
+        return next(new CustomError(`No goal with id ${req.params.id}`, 404));
     }
-    const goal = await Goal.findById(req.params.id);
+    const goal = await Goal.findOne({$and:[
+        { user: user_id},
+        {_id : req.params.id}
+    ]});
     if (!goal) {
-        res.status(404);
-        return next(new Error(`No goal with id ${req.params.id}`));
+        return next(new CustomError(`No goal with id ${req.params.id}`, 404));
     } else {
         await Goal.deleteOne({ _id: req.params.id });
         }
